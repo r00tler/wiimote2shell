@@ -4,42 +4,47 @@ import socket
 import subprocess
 import argparse
 
-# <<< CONFIG BEGIN >>>
-
-MAC = '00:22:AA:90:26:86'
-#  Wiimote Button -> action
-MAPPING = {'LEFT' : 'xdotool key Left',
-           'RIGHT': 'xdotool key Right',
-           'UP'   : 'xdotool key Up',
-           'DOWN' : 'xdotool key Down',
-           'PLUS' : 'xdotool key W', # upvote
-           'MINUS': 'xdotool key S', # downvote
-           'ONE'  : None,
-           'TWO'  : None,
-           'A'    : None,
-           'B'    : None
-          }
-          # HOME -> Exit program
-
-# <<< CONFIG END >>>
-
-def readconfig():
-
+def readconfig(path):
+    mapping=dict()
+    try:
+        conf = open(path, 'r').readlines()
+        for line in conf:
+            keys = line.split()
+            mapping[keys[0]] = keys[1:]
+    except Exception as e:
+        print('Unable to parse config')
+        exit()
+    return mapping
 
 def do(action):
-    subprocess.call(action.split())
+    subprocess.call(action)
 
-def check_buttons(buttons):
+def check_buttons(buttons, mapping):
     if buttons:
         print(buttons)
 
     # intersect buttons pressed and mappings available
     for button in buttons:
-        if button in MAPPING.keys():
-            if MAPPING[button]:
-                do(MAPPING[button])
+        if button in mapping.keys():
+            if mapping[button]:
+                do(mapping[button])
 
 def main():
+    parser = argparse.ArgumentParser(description='wiimote2shell remote control program')
+    parser.add_argument('--device', '-d', help='wiimote mac address', required=True)
+    parser.add_argument('--config', '-c', help='config file path', required=True)
+    parser.add_argument('--debug', action='store_true')
+    args = parser.parse_args()
+
+    global DEBUG
+    DEBUG = args.debug
+    mac = args.device
+    mapping = readconfig(args.config)
+
+    if DEBUG:
+        print(mapping)
+        print(mac)
+
     # http://wiibrew.org/wiki/Wiimote#Buttons
     bitmap = [[0x01, 'LEFT' , 'TWO'],
               [0x02, 'RIGHT', 'ONE'],
@@ -53,8 +58,8 @@ def main():
         # sockets will magically be closed on programs termination, so don't worry
         s_in = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_L2CAP)
         s_out = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_L2CAP)
-        s_in.connect((MAC, 0x13))
-        s_out.connect((MAC, 0x11))
+        s_in.connect((mac, 0x13))
+        s_out.connect((mac, 0x11))
     except OSError:
         print('Wiimote not found or bluetooth not available.')
         exit()
@@ -85,7 +90,7 @@ def main():
             print('Disconnected.')
             break
 
-        check_buttons(buttons)
+        check_buttons(buttons, mapping)
 
 if __name__ == '__main__':
     try:
