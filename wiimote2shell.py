@@ -23,7 +23,8 @@ def do(action):
     if action == ['EXIT']:
         exit()
     elif action:
-        subprocess.call(action)
+        # use Popen to run command in background
+        subprocess.Popen(action)
 
 def check_buttons(buttons, mapping):
     if buttons:
