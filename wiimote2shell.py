@@ -5,29 +5,33 @@ import subprocess
 import argparse
 
 def readconfig(path):
-    mapping=dict()
+    mapping = {}
     try:
         conf = open(path, 'r').readlines()
         for line in conf:
-            keys = line.split()
-            mapping[keys[0]] = keys[1:]
+            if line != '\n':
+                keys = line.split()
+                mapping[keys[0]] = keys[1:]
     except Exception as e:
-        print('Unable to parse config')
+        print('Unable to parse config', path)
+        if DEBUG:
+            print(e)
         exit()
     return mapping
 
 def do(action):
-    subprocess.call(action)
+    if action == ['EXIT']:
+        exit()
+    elif action:
+        subprocess.call(action)
 
 def check_buttons(buttons, mapping):
     if buttons:
         print(buttons)
 
-    # intersect buttons pressed and mappings available
     for button in buttons:
         if button in mapping.keys():
-            if mapping[button]:
-                do(mapping[button])
+            do(mapping[button])
 
 def main():
     parser = argparse.ArgumentParser(description='wiimote2shell remote control program')
@@ -86,9 +90,6 @@ def main():
                 # apply bitmask
                 if msg[i]&hexv[0]:
                     buttons.append(hexv[i-1])
-        if 'HOME' in buttons:
-            print('Disconnected.')
-            break
 
         check_buttons(buttons, mapping)
 
