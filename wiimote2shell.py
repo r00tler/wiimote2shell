@@ -14,7 +14,7 @@ def readconfig(path):
                 keys = shlex.split(line)
                 mapping[keys[0]] = keys[1:]
     except Exception as e:
-        print('Unable to parse config', path) # logger nehmen
+        print('Unable to parse config', path)
         exit()
     return mapping
 
